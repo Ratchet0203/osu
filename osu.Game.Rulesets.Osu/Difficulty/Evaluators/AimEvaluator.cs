@@ -2,7 +2,11 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Osu.Objects;
 
@@ -24,7 +28,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         /// <item><description>and slider difficulty.</description></item>
         /// </list>
         /// </summary>
-        public static double EvaluateDifficultyOf(DifficultyHitObject current, bool withSliderTravelDistance)
+        public static double EvaluateDifficultyOf(DifficultyHitObject current, bool withSliderTravelDistance, IReadOnlyList<Mod> Mods)
         {
             if (current.BaseObject is Spinner || current.Index <= 1 || current.Previous(0).BaseObject is Spinner)
                 return 0;
@@ -125,6 +129,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (withSliderTravelDistance)
                 aimStrain += sliderBonus * slider_multiplier;
 
+            // In the case of Relax, punish the SR of maps more the lower OD they are, since the player can aim slower and still SS due to the lenient window.
+            // We accomplish this by adding a portion of the 300 hit window to strainTime, effectively making them "slower" in the eyes of SR.
+            // We only need to do this for the aim skill because speed is completely gone with Relax.
+            if (Mods.Any(h => h is OsuModRelax))
+            {
+                // Use 50 window instead of 300 when slideracc is disabled, since sliders are much more cheesable in this case.
+                if (osuCurrObj.BaseObject is Slider && (Mods.Any(h => h is OsuModClassic) && Mods.OfType<OsuModClassic>().Any(m => m.NoSliderHeadAccuracy.Value)))
+                    aimStrain /= (osuCurrObj.StrainTime + osuCurrObj.HitWindowMeh / 5) / osuCurrObj.StrainTime;
+                else
+                    aimStrain /= (osuCurrObj.StrainTime + osuCurrObj.HitWindowGreat / 5) / osuCurrObj.StrainTime;
+            }
             return aimStrain;
         }
 

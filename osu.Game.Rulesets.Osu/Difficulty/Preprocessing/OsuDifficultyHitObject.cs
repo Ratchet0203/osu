@@ -83,6 +83,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
         /// Retrieves the full hit window for a Great <see cref="HitResult"/>.
         /// </summary>
         public double HitWindowGreat { get; private set; }
+        public double HitWindowMeh { get; private set; }
 
         private readonly OsuHitObject? lastLastObject;
         private readonly OsuHitObject lastObject;
@@ -99,10 +100,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             if (BaseObject is Slider sliderObject)
             {
                 HitWindowGreat = 2 * sliderObject.HeadCircle.HitWindows.WindowFor(HitResult.Great) / clockRate;
+                HitWindowMeh = 2 * sliderObject.HeadCircle.HitWindows.WindowFor(HitResult.Meh) / clockRate;
             }
             else
             {
                 HitWindowGreat = 2 * BaseObject.HitWindows.WindowFor(HitResult.Great) / clockRate;
+                HitWindowMeh = 2 * BaseObject.HitWindows.WindowFor(HitResult.Meh) / clockRate;
             }
 
             setDistances(clockRate);
