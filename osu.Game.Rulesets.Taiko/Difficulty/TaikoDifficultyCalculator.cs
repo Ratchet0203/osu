@@ -31,7 +31,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
         private double patternMultiplier;
 
         private bool isRelax;
-        private bool isConvert;
 
         public override int Version => 20260706;
 
@@ -42,7 +41,9 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
 
         protected override Skill[] CreateSkills(IBeatmap beatmap, Mod[] mods)
         {
-            isConvert = beatmap.BeatmapInfo.Ruleset.OnlineID == 0;
+            HitWindows hitWindows = new TaikoHitWindows();
+            hitWindows.SetDifficulty(beatmap.Difficulty.OverallDifficulty);
+
             isRelax = mods.Any(h => h is TaikoModRelax);
 
             return new Skill[]
@@ -50,8 +51,8 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 new Rhythm(mods),
                 new Reading(mods),
                 new Colour(mods),
-                new Stamina(mods, false, isConvert),
-                new Stamina(mods, true, isConvert)
+                new Stamina(mods, false),
+                new Stamina(mods, true)
             };
         }
 
@@ -219,7 +220,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 double readingPeak = readingPeaks[i] * reading_skill_multiplier;
                 double colourPeak = isRelax ? 0 : colourPeaks[i] * colour_skill_multiplier; // There is no colour difficulty in relax.
                 double staminaPeak = staminaPeaks[i] * stamina_skill_multiplier * strainLengthBonus;
-                staminaPeak /= isConvert || isRelax ? 1.5 : 1.0; // Available finger count is increased by 150%, thus we adjust accordingly.
+                staminaPeak /= isRelax ? 1.5 : 1.0; // Available finger count is increased by 150%, thus we adjust accordingly.
 
                 double peak = DiffUtils.Norm(2, DiffUtils.Norm(1.5, colourPeak, staminaPeak), rhythmPeak, readingPeak);
 

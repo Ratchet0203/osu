@@ -19,7 +19,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty.Skills
         private const double strain_decay_base = 0.4;
 
         public readonly bool SingleColourStamina;
-        private readonly bool isConvert;
 
         private double currentStrain;
 
@@ -28,12 +27,10 @@ namespace osu.Game.Rulesets.Taiko.Difficulty.Skills
         /// </summary>
         /// <param name="mods">Mods for use in skill calculations.</param>
         /// <param name="singleColourStamina">Reads when Stamina is from a single coloured pattern.</param>
-        /// <param name="isConvert">Determines if the currently evaluated beatmap is converted.</param>
-        public Stamina(Mod[] mods, bool singleColourStamina, bool isConvert)
+        public Stamina(Mod[] mods, bool singleColourStamina)
             : base(mods)
         {
             SingleColourStamina = singleColourStamina;
-            this.isConvert = isConvert;
         }
 
         private double strainDecay(double ms) => DiffUtils.Pow(strain_decay_base, ms / 1000);
@@ -47,7 +44,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty.Skills
             var currentObject = current as TaikoDifficultyHitObject;
             int index = currentObject?.ColourData.MonoStreak?.HitObjects.IndexOf(currentObject) ?? 0;
 
-            double monoLengthBonus = isConvert ? 1.0 : 1.0 + 0.5 * DiffUtils.ReverseLerp(index, 5, 20);
+            double monoLengthBonus = 1.0 + 0.5 * DifficultyCalculationUtils.ReverseLerp(index, 5, 20);
 
             // Mono-streak bonus is only applied to colour-based stamina to reward longer sequences of same-colour hits within patterns.
             if (!SingleColourStamina)
