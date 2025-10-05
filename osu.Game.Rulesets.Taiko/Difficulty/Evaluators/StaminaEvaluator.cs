@@ -8,67 +8,30 @@ using osu.Game.Rulesets.Taiko.Objects;
 
 namespace osu.Game.Rulesets.Taiko.Difficulty.Evaluators
 {
-    public static class StaminaEvaluator
+    public class StaminaEvaluator
     {
         /// <summary>
-        /// Evaluates the minimum mechanical stamina required to play the current object. This is calculated using the
-        /// maximum possible interval between two hits using the same key, by alternating available fingers for each colour.
+        /// Evaluates the minimum mechanical stamina required to play the current object.
         /// </summary>
         public static double EvaluateDifficultyOf(DifficultyHitObject current)
         {
-            if (current.BaseObject is not Hit)
-            {
-                return 0.0;
-            }
+            // The time in milliseconds between the current object and the last object played on this finger
+            double timeSincePreviousSameFingerObject = GetTimeSincePreviousSameFingerObject(current);
 
-            // Find the previous hit object hit by the current finger, which is n notes prior, n being the number of
-            // available fingers.
+            // Formula generating stamina difficulty based on this time, experiment with this
+            return 0.25 + (2000 / timeSincePreviousSameFingerObject);
+        }
+
+        public static double GetTimeSincePreviousSameFingerObject(DifficultyHitObject current)
+        {
             TaikoDifficultyHitObject taikoCurrent = (TaikoDifficultyHitObject)current;
-            TaikoDifficultyHitObject? taikoPrevious = current.Previous(1) as TaikoDifficultyHitObject;
-            TaikoDifficultyHitObject? previousMono = taikoCurrent.PreviousMono(availableFingersFor(taikoCurrent) - 1);
+            TaikoDifficultyHitObject? taikoPreviousOnSameFinger = taikoCurrent.PreviousMono(1);
 
-            double objectStrain = 0.5; // Add a base strain to all objects
-            if (taikoPrevious == null) return objectStrain;
+            if (taikoPreviousOnSameFinger == null)
+                return double.PositiveInfinity;
 
-            if (previousMono != null)
-                objectStrain += speedBonus(taikoCurrent.StartTime - previousMono.StartTime) + 0.5 * speedBonus(taikoCurrent.StartTime - taikoPrevious.StartTime);
-
-            return objectStrain;
-        }
-
-        /// <summary>
-        /// Applies a speed bonus dependent on the time since the last hit performed using this finger.
-        /// </summary>
-        /// <param name="interval">The interval between the current and previous note hit using the same finger.</param>
-        private static double speedBonus(double interval)
-        {
-            // Interval is capped at a very small value to prevent infinite values.
-            interval = Math.Max(interval, 1);
-
-            return 20 / interval;
-        }
-
-        /// <summary>
-        /// Determines the number of fingers available to hit the current <see cref="TaikoDifficultyHitObject"/>.
-        /// Any mono notes that is more than 300ms apart from a colour change will be considered to have more than 2
-        /// fingers available, since players can hit the same key with multiple fingers.
-        /// </summary>
-        private static int availableFingersFor(TaikoDifficultyHitObject hitObject)
-        {
-            DifficultyHitObject? previousColourChange = hitObject.ColourData.PreviousColourChange;
-            DifficultyHitObject? nextColourChange = hitObject.ColourData.NextColourChange;
-
-            if (previousColourChange != null && hitObject.StartTime - previousColourChange.StartTime < 300)
-            {
-                return 2;
-            }
-
-            if (nextColourChange != null && nextColourChange.StartTime - hitObject.StartTime < 300)
-            {
-                return 2;
-            }
-
-            return 8;
+            // The time in milliseconds between the current object and the last object played on this finger, prevented from going below 1ms
+            return Math.Max(taikoCurrent.StartTime -  taikoCurrent.PreviousMono(1).StartTime, 1.0);
         }
     }
 }
