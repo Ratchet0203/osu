@@ -38,12 +38,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
         public double StaminaDifficulty { get; set; }
 
         /// <summary>
-        /// The ratio of stamina difficulty from mono-color (single colour) streams to total stamina difficulty.
-        /// </summary>
-        [JsonProperty("mono_stamina_factor")]
-        public double MonoStaminaFactor { get; set; }
-
-        /// <summary>
         /// The factor corresponding to the consistency of a map.
         /// </summary>
         [JsonProperty("consistency_factor")]
@@ -58,7 +52,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
 
             yield return (ATTRIB_ID_DIFFICULTY, StarRating);
             yield return (ATTRIB_ID_RHYTHM_DIFFICULTY, RhythmDifficulty);
-            yield return (ATTRIB_ID_MONO_STAMINA_FACTOR, MonoStaminaFactor);
             yield return (ATTRIB_ID_CONSISTENCY_FACTOR, ConsistencyFactor);
         }
 
@@ -68,7 +61,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
 
             StarRating = values[ATTRIB_ID_DIFFICULTY];
             RhythmDifficulty = values[ATTRIB_ID_RHYTHM_DIFFICULTY];
-            MonoStaminaFactor = values[ATTRIB_ID_MONO_STAMINA_FACTOR];
             ConsistencyFactor = values[ATTRIB_ID_CONSISTENCY_FACTOR];
         }
     }

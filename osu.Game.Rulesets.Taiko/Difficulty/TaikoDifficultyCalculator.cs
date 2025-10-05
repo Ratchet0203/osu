@@ -51,8 +51,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 new Rhythm(mods),
                 new Reading(mods),
                 new Colour(mods),
-                new Stamina(mods, false),
-                new Stamina(mods, true)
+                new Stamina(mods)
             };
         }
 
@@ -104,17 +103,14 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             var rhythm = skills.OfType<Rhythm>().Single();
             var reading = skills.OfType<Reading>().Single();
             var colour = skills.OfType<Colour>().Single();
-            var stamina = skills.OfType<Stamina>().Single(s => !s.SingleColourStamina);
-            var singleColourStamina = skills.OfType<Stamina>().Single(s => s.SingleColourStamina);
+            var stamina = skills.OfType<Stamina>().Single();
 
             double staminaDifficultyValue = stamina.DifficultyValue();
 
             double rhythmSkill = rhythm.DifficultyValue() * rhythm_skill_multiplier;
             double readingSkill = reading.DifficultyValue() * reading_skill_multiplier;
             double colourSkill = colour.DifficultyValue() * colour_skill_multiplier;
-            double staminaSkill = staminaDifficultyValue * stamina_skill_multiplier;
-            double monoStaminaSkill = singleColourStamina.DifficultyValue() * stamina_skill_multiplier;
-            double monoStaminaFactor = staminaSkill == 0 ? 1 : DiffUtils.Pow(monoStaminaSkill / staminaSkill, 5);
+            double staminaSkill = stamina.DifficultyValue() * stamina_skill_multiplier;
 
             double staminaDifficultStrains = stamina.CountTopWeightedStrains(staminaDifficultyValue);
 
@@ -144,7 +140,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 ReadingDifficulty = readingDifficulty,
                 ColourDifficulty = colourDifficulty,
                 StaminaDifficulty = staminaDifficulty,
-                MonoStaminaFactor = monoStaminaFactor,
                 StaminaTopStrains = staminaDifficultStrains,
                 ConsistencyFactor = consistencyFactor,
                 MaxCombo = beatmap.GetMaxCombo(),

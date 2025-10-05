@@ -133,13 +133,9 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             }
 
             if (score.Mods.Any(m => m is ModFlashlight<TaikoHitObject>))
-                difficultyValue *= Math.Max(1, 1.050 - Math.Min(attributes.MonoStaminaFactor / 50, 1) * lengthBonus);
+                difficultyValue *= 1.05 * lengthBonus;
 
-            // Scale accuracy more harshly on nearly-completely mono (single coloured) speed maps.
-            double monoAccScalingExponent = 2 + attributes.MonoStaminaFactor;
-            double monoAccScalingShift = 500 - 100 * (attributes.MonoStaminaFactor * 3);
-
-            return difficultyValue * DiffUtils.Pow(DiffUtils.Erf(monoAccScalingShift / (DiffUtils.SQRT2 * estimatedUnstableRate.Value)), monoAccScalingExponent);
+            return difficultyValue;
         }
 
         private double computeAccuracyValue(ScoreInfo score, TaikoDifficultyAttributes attributes, bool isConvert)
