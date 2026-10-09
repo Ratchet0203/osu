@@ -65,8 +65,8 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             bool isConvert = score.BeatmapInfo!.Ruleset.OnlineID != 1;
             bool isClassic = score.Mods.Any(m => m is ModClassic);
 
-            double difficultyValue = computeDifficultyValue(score, taikoAttributes, isConvert, isClassic) * 1.08;
-            double accuracyValue = computeAccuracyValue(score, taikoAttributes, isConvert) * 1.1;
+            double difficultyValue = computeDifficultyValue(score, taikoAttributes, isClassic) * 1.08;
+            double accuracyValue = computeAccuracyValue(score, taikoAttributes) * 1.1;
 
             return new TaikoPerformanceAttributes
             {
@@ -77,7 +77,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             };
         }
 
-        private double computeDifficultyValue(ScoreInfo score, TaikoDifficultyAttributes attributes, bool isConvert, bool isClassic)
+        private double computeDifficultyValue(ScoreInfo score, TaikoDifficultyAttributes attributes, bool isClassic)
         {
             if (estimatedUnstableRate == null || totalDifficultHits == 0)
                 return 0;
@@ -115,7 +115,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
 
             if (score.Mods.Any(m => m is ModHidden))
             {
-                double hiddenBonus = isConvert ? 0.025 : 0.1;
+                double hiddenBonus = 0.1;
 
                 // Hidden+flashlight plays are excluded from reading-based penalties to hidden.
                 if (!score.Mods.Any(m => m is ModFlashlight))
@@ -133,12 +133,12 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             }
 
             if (score.Mods.Any(m => m is ModFlashlight<TaikoHitObject>))
-                difficultyValue *= 1.05 * lengthBonus;
+                difficultyValue *= Math.Max(1, 1.050 * lengthBonus);
 
             return difficultyValue;
         }
 
-        private double computeAccuracyValue(ScoreInfo score, TaikoDifficultyAttributes attributes, bool isConvert)
+        private double computeAccuracyValue(ScoreInfo score, TaikoDifficultyAttributes attributes)
         {
             if (greatHitWindow <= 0 || estimatedUnstableRate == null)
                 return 0;
@@ -148,7 +148,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             // Scales up the bonus for lower unstable rate as star rating increases.
             accuracyValue *= 1 + DiffUtils.Pow(50 / estimatedUnstableRate.Value, 2) * DiffUtils.Pow(attributes.StarRating, 2.8) / 600;
 
-            if (score.Mods.Any(m => m is ModHidden) && !isConvert)
+            if (score.Mods.Any(m => m is ModHidden))
                 accuracyValue *= 1.075;
 
             // Applies a bonus to maps with more total difficulty, calculating this with a map's total hits and consistency factor.
@@ -157,7 +157,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             // Applies a bonus to maps with more total memory required with HDFL.
             double memoryLengthBonus = Math.Min(1.15, DiffUtils.Pow(totalHits / 1500.0, 0.3));
 
-            if (score.Mods.Any(m => m is ModFlashlight<TaikoHitObject>) && score.Mods.Any(m => m is ModHidden) && !isConvert)
+            if (score.Mods.Any(m => m is ModFlashlight<TaikoHitObject>) && score.Mods.Any(m => m is ModHidden))
                 accuracyValue *= Math.Max(1.0, 1.05 * memoryLengthBonus);
 
             return accuracyValue;

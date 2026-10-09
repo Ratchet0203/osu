@@ -27,7 +27,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
         private const double colour_skill_multiplier = 0.375 * difficulty_multiplier;
         private const double stamina_skill_multiplier = 0.445 * difficulty_multiplier;
 
-        private double strainLengthBonus;
         private double patternMultiplier;
 
         private bool isRelax;
@@ -41,9 +40,6 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
 
         protected override Skill[] CreateSkills(IBeatmap beatmap, Mod[] mods)
         {
-            HitWindows hitWindows = new TaikoHitWindows();
-            hitWindows.SetDifficulty(beatmap.Difficulty.OverallDifficulty);
-
             isRelax = mods.Any(h => h is TaikoModRelax);
 
             return new Skill[]
@@ -51,7 +47,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 new Rhythm(mods),
                 new Reading(mods),
                 new Colour(mods),
-                new Stamina(mods)
+                new Stamina(mods),
             };
         }
 
@@ -105,19 +101,13 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             var colour = skills.OfType<Colour>().Single();
             var stamina = skills.OfType<Stamina>().Single();
 
-            double staminaDifficultyValue = stamina.DifficultyValue();
-
             double rhythmSkill = rhythm.DifficultyValue() * rhythm_skill_multiplier;
             double readingSkill = reading.DifficultyValue() * reading_skill_multiplier;
             double colourSkill = colour.DifficultyValue() * colour_skill_multiplier;
             double staminaSkill = stamina.DifficultyValue() * stamina_skill_multiplier;
 
-            double staminaDifficultStrains = stamina.CountTopWeightedStrains(staminaDifficultyValue);
-
             // As we don't have pattern integration in osu!taiko, we apply the other two skills relative to rhythm.
             patternMultiplier = DiffUtils.Pow(staminaSkill * colourSkill, 0.10);
-
-            strainLengthBonus = 1 + 0.15 * DiffUtils.ReverseLerp(staminaDifficultStrains, 1000, 1555);
 
             double combinedRating = combinedDifficultyValue(rhythm, reading, colour, stamina, out double consistencyFactor);
             double starRating = rescale(combinedRating * 1.4);
@@ -129,18 +119,15 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
             double readingDifficulty = readingSkill * skillRating;
             double colourDifficulty = colourSkill * skillRating;
             double staminaDifficulty = staminaSkill * skillRating;
-            double mechanicalDifficulty = colourDifficulty + staminaDifficulty; // Mechanical difficulty is the sum of colour and stamina difficulties.
 
             TaikoDifficultyAttributes attributes = new TaikoDifficultyAttributes
             {
                 StarRating = starRating,
                 Mods = mods,
-                MechanicalDifficulty = mechanicalDifficulty,
                 RhythmDifficulty = rhythmDifficulty,
                 ReadingDifficulty = readingDifficulty,
                 ColourDifficulty = colourDifficulty,
                 StaminaDifficulty = staminaDifficulty,
-                StaminaTopStrains = staminaDifficultStrains,
                 ConsistencyFactor = consistencyFactor,
                 MaxCombo = beatmap.GetMaxCombo(),
             };
@@ -214,10 +201,14 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 double rhythmPeak = rhythmPeaks[i] * rhythm_skill_multiplier * patternMultiplier;
                 double readingPeak = readingPeaks[i] * reading_skill_multiplier;
                 double colourPeak = isRelax ? 0 : colourPeaks[i] * colour_skill_multiplier; // There is no colour difficulty in relax.
-                double staminaPeak = staminaPeaks[i] * stamina_skill_multiplier * strainLengthBonus;
-                staminaPeak /= isRelax ? 1.5 : 1.0; // Available finger count is increased by 150%, thus we adjust accordingly.
+                double staminaPeak = staminaPeaks[i] * stamina_skill_multiplier;
+                // Below code nerfs obscenely fast maps the more repetitive their patterns are, with the effect being stronger the faster the map gets over a threshold.
+                // This is intended as a nerf to maps where TL/raketapping are most viable. Usually converts, but we want to avoid applying a nerf to converts specifically.
+                double staminaPeakThreshold = 0.95;
+                if (staminaPeak > staminaPeakThreshold)
+                    staminaPeak = staminaPeakThreshold + ((staminaPeak - staminaPeakThreshold) * Math.Pow(colourPeak / staminaPeak, 1));
 
-                double peak = DiffUtils.Norm(2, DiffUtils.Norm(1.5, colourPeak, staminaPeak), rhythmPeak, readingPeak);
+                double peak = DifficultyCalculationUtils.Norm(2, DifficultyCalculationUtils.Norm(1.5, staminaPeak), rhythmPeak, readingPeak);
 
                 // Sections with 0 strain are excluded to avoid worst-case time complexity of the following sort (e.g. /b/2351871).
                 // These sections will not contribute to the difficulty.
