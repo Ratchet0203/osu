@@ -208,7 +208,7 @@ namespace osu.Game.Rulesets.Taiko.Difficulty
                 if (staminaPeak > staminaPeakThreshold)
                     staminaPeak = staminaPeakThreshold + ((staminaPeak - staminaPeakThreshold) * Math.Pow(colourPeak / staminaPeak, 1));
 
-                double peak = DifficultyCalculationUtils.Norm(2, DifficultyCalculationUtils.Norm(1.5, staminaPeak), rhythmPeak, readingPeak);
+                double peak = DiffUtils.Norm(2, DiffUtils.Norm(1.5, staminaPeak), rhythmPeak, readingPeak);
 
                 // Sections with 0 strain are excluded to avoid worst-case time complexity of the following sort (e.g. /b/2351871).
                 // These sections will not contribute to the difficulty.
